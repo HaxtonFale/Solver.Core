@@ -29,6 +29,6 @@ jobs:
     - name: Build
       run: dotnet build --no-restore --configuration Release
     - name: Pack
-      run: dotnet pack --no-build --configuration Release
+      run: dotnet pack --no-build --configuration Release --output pkg
     - name: Push
-      run: dotnet nuget push "bin/Release/*.nupkg" --source "github"
+      run: dotnet nuget push "pkg/*.nupkg" --source "github"
