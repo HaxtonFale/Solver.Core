@@ -2,6 +2,7 @@
 
 public class Solution<TState, TStep>
 {
+    public Guid Id { get; init; }
     public TState State { get; init; }
     public (Solution<TState, TStep> Solution, TStep Step)? PreviousStep { get; init; }
     public uint Length { get; }
