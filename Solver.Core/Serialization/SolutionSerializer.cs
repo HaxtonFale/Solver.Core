@@ -15,19 +15,26 @@ public class SolutionSerializer<TState, TStep>(IStateSerializer<TState, TStep> s
             var idBuffer = solution.Id.ToByteArray();
 
             var previousStepBuffer = new byte[16 + stateSerializer.SerializedStepLength];
+            var stepBuffer = new byte[stateSerializer.SerializedStepLength];
             if (solution.PreviousStep != null)
             {
                 Array.Copy(solution.PreviousStep.Value.Solution.Id.ToByteArray(), previousStepBuffer, 16);
-                Array.Copy(stateSerializer.SerializeStep(solution.PreviousStep.Value.Step), 0, previousStepBuffer, 16, stateSerializer.SerializedStepLength);
+                stateSerializer.SerializeStep(solution.PreviousStep.Value.Step, stepBuffer);
+                Array.Copy(stepBuffer, 0, previousStepBuffer, 16, stateSerializer.SerializedStepLength);
+            }
+            else
+            {
+                Array.Fill(previousStepBuffer, byte.MinValue);
             }
 
-            var stateBuffer = stateSerializer.SerializeState(solution.State);
+            var stateBuffer = new byte[1024];
+            var stateLength = stateSerializer.SerializeState(solution.State, stateBuffer);
 
             var totalLength = idBuffer.Length + previousStepBuffer.Length + stateBuffer.Length;
             await stream.WriteAsync(BitConverter.GetBytes(totalLength), token);
             await stream.WriteAsync(idBuffer, token);
             await stream.WriteAsync(previousStepBuffer, token);
-            await stream.WriteAsync(stateBuffer, token);
+            await stream.WriteAsync(stateBuffer.AsMemory(0, stateLength), token);
             await stream.FlushAsync(token);
         }
     }
