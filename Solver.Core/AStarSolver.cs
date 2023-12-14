@@ -15,4 +15,9 @@ public class AStarSolver<TState, TStep, TPriority>(Func<TState, IEnumerable<TSte
         var priority = heuristic(solution.State);
         _queue.Enqueue(solution, priority);
     }
+
+    protected internal override IEnumerable<Solution<TState, TStep>> GetAllSolutions()
+    {
+        foreach (var (element, _) in _queue.UnorderedItems) yield return element;
+    }
 }

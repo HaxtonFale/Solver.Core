@@ -6,8 +6,9 @@ public abstract class Solver<TState, TStep>(Func<TState, IEnumerable<TStep>> gen
     protected abstract Solution<TState, TStep> GetNextSolution();
     protected abstract bool CanGetNextSolution();
     protected abstract void StoreSolution(Solution<TState, TStep> solution);
+    protected internal abstract IEnumerable<Solution<TState, TStep>> GetAllSolutions();
 
-    public Solution<TState, TStep>? TrySolve(TState initialState)
+    public Solution<TState, TStep>? TrySolve(TState initialState, CancellationToken token = default)
     {
         StoreSolution(new Solution<TState, TStep>(initialState));
 
@@ -15,7 +16,7 @@ public abstract class Solver<TState, TStep>(Func<TState, IEnumerable<TStep>> gen
             ? new HashSet<TState> {initialState}
             : new HashSet<TState>(comparer) {initialState};
 
-        while (CanGetNextSolution())
+        while (CanGetNextSolution() && !token.IsCancellationRequested)
         {
             var solution = GetNextSolution();
             foreach (var step in generateSteps(solution.State))

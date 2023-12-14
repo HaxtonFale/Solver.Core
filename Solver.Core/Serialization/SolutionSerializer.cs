@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using Solver.Core.Base;
 
 namespace Solver.Core.Serialization;
 
@@ -29,6 +30,11 @@ public class SolutionSerializer<TState, TStep>(IStateSerializer<TState, TStep> s
             await stream.WriteAsync(stateBuffer, token);
             await stream.FlushAsync(token);
         }
+    }
+
+    public async Task Serialize(Solver<TState, TStep> solver, Stream stream, CancellationToken token = default)
+    {
+        await Serialize(solver.GetAllSolutions(), stream, token);
     }
 
     public async IAsyncEnumerable<(Guid id, Guid parent, TStep step, TState state)> Deserialize(Stream stream, [EnumeratorCancellation] CancellationToken token = default)
