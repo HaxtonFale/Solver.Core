@@ -10,7 +10,7 @@ public class AStarSolver<TState, TStep, TPriority>(Func<TState, IEnumerable<TSte
 
     protected override Solution<TState, TStep> GetNextSolution() => _queue.Dequeue();
     protected override bool CanGetNextSolution() => _queue.Count > 0;
-    protected override void StoreSolution(Solution<TState, TStep> solution)
+    protected override void EnqueueSolution(Solution<TState, TStep> solution)
     {
         var priority = heuristic(solution.State);
         _queue.Enqueue(solution, priority);

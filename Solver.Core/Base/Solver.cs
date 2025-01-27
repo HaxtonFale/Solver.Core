@@ -1,16 +1,20 @@
-﻿namespace Solver.Core.Base;
+﻿using Solver.Core.Cache;
+
+namespace Solver.Core.Base;
 
 public abstract class Solver<TState, TStep>(Func<TState, IEnumerable<TStep>> generateSteps, Func<TState, TStep, TState> performStep,
-    Func<TState, bool> solvedTest, IEqualityComparer<TState>? comparer = null)
+    Func<TState, bool> solvedTest, ISolutionCache<TState, TStep> solutionCache, IEqualityComparer<TState>? comparer = null)
 {
     protected abstract Solution<TState, TStep> GetNextSolution();
     protected abstract bool CanGetNextSolution();
-    protected abstract void StoreSolution(Solution<TState, TStep> solution);
+    protected abstract void EnqueueSolution(Solution<TState, TStep> solution);
     protected internal abstract IEnumerable<Solution<TState, TStep>> GetAllSolutions();
 
     public Solution<TState, TStep>? TrySolve(TState initialState, CancellationToken token = default)
     {
-        StoreSolution(new Solution<TState, TStep>(initialState));
+        var initial = new Solution<TState, TStep>(initialState) { Id = Guid.Empty };
+        EnqueueSolution(initial);
+        solutionCache.RememberSolution(initial);
 
         var visitedStates = comparer == null
             ? new HashSet<TState> {initialState}
@@ -25,7 +29,7 @@ public abstract class Solver<TState, TStep>(Func<TState, IEnumerable<TStep>> gen
                 if (!visitedStates.Add(state)) continue;
                 var newSolution = solution.AddStep(state, step);
                 if (solvedTest(state)) return newSolution;
-                StoreSolution(newSolution);
+                EnqueueSolution(newSolution);
             }
         }
 

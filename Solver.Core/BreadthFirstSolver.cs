@@ -10,6 +10,6 @@ public class BreadthFirstSolver<TState, TStep>(Func<TState, IEnumerable<TStep>> 
 
     protected override Solution<TState, TStep> GetNextSolution() => _queue.Dequeue();
     protected override bool CanGetNextSolution() => _queue.Count > 0;
-    protected override void StoreSolution(Solution<TState, TStep> solution) => _queue.Enqueue(solution);
+    protected override void EnqueueSolution(Solution<TState, TStep> solution) => _queue.Enqueue(solution);
     protected internal override IEnumerable<Solution<TState, TStep>> GetAllSolutions() => _queue;
 }
