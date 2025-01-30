@@ -1,9 +1,7 @@
-﻿using Solver.Core.Cache;
-
-namespace Solver.Core.Base;
+﻿namespace Solver.Core.Base;
 
 public abstract class Solver<TState, TStep>(Func<TState, IEnumerable<TStep>> generateSteps, Func<TState, TStep, TState> performStep,
-    Func<TState, bool> solvedTest, ISolutionCache<TState, TStep> solutionCache, IEqualityComparer<TState>? comparer = null)
+    Func<TState, bool> solvedTest, IEqualityComparer<TState>? comparer = null)
 {
     protected abstract Solution<TState, TStep> GetNextSolution();
     protected abstract bool CanGetNextSolution();
@@ -14,7 +12,6 @@ public abstract class Solver<TState, TStep>(Func<TState, IEnumerable<TStep>> gen
     {
         var initial = new Solution<TState, TStep>(initialState) { Id = Guid.Empty };
         EnqueueSolution(initial);
-        solutionCache.RememberSolution(initial);
 
         var visitedStates = comparer == null
             ? new HashSet<TState> {initialState}

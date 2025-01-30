@@ -21,15 +21,14 @@ internal class InMemoryCache<TState, TStep>(ILogger<InMemoryCache<TState, TStep>
         throw new ArgumentException($"Solution with ID {solutionId:D} has not been cached yet.", nameof(solutionId));
     }
 
-    public void RememberSolution(Solution<TState, TStep> solution)
+    public void StoreSolution(Solution<TState, TStep> solution)
     {
         var key = solution.Id;
         logger.LogTrace("Caching solution with ID {Id:D}", key);
-        if (_cache.ContainsKey(key))
+        if (!_cache.TryAdd(key, solution))
         {
             throw new InvalidOperationException("Solution ID collision detected");
         }
-        _cache[key] = solution;
     }
 
     #endregion

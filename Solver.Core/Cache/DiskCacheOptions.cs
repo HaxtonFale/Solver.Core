@@ -6,6 +6,5 @@ public class DiskCacheOptions
 {
     public const string ConfigurationSectionName = "Cache";
 
-    [Required]
-    public string Root { get; init; }
+    public string? Root { get; init; }
 }

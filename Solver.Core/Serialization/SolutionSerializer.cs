@@ -12,36 +12,35 @@ public class SolutionSerializer<TState, TStep>(IStateSerializer<TState, TStep> s
         var idBuffer = solution.Id.ToByteArray();
         logger?.LogTrace("GUID bytes: {Bytes}", PrintBytes(idBuffer));
 
-        var solutionLengthBuffer = BitConverter.GetBytes(solution.Length);
-        logger?.LogTrace("Solution length bytes: {Bytes}", PrintBytes(solutionLengthBuffer));
+        var stepsCount = BitConverter.GetBytes(solution.Length);
+        logger?.LogTrace("Solution steps count bytes: {Bytes}", PrintBytes(stepsCount));
 
         var previousStepBuffer = new byte[16 + stateSerializer.SerializedStepLength];
         if (solution.Previous != null)
         {
-            var stepBuffer = new byte[stateSerializer.SerializedStepLength];
             Array.Copy(solution.Previous.Value.Id.ToByteArray(), previousStepBuffer, 16);
+            var stepBuffer = new byte[stateSerializer.SerializedStepLength];
             stateSerializer.SerializeStep(solution.Previous.Value.Step, stepBuffer);
-            logger?.LogTrace("Step bytes: {Bytes}", PrintBytes(stepBuffer));
             Array.Copy(stepBuffer, 0, previousStepBuffer, 16, stateSerializer.SerializedStepLength);
-
         }
         else
         {
             Array.Fill(previousStepBuffer, byte.MinValue);
         }
+        logger?.LogTrace("Step bytes: {Bytes} ({Length})", PrintBytes(previousStepBuffer), previousStepBuffer.Length);
 
         var stateBuffer = new byte[1024];
         var stateLength = stateSerializer.SerializeState(solution.State, stateBuffer);
         logger?.LogTrace("State length: {Length}", stateLength);
 
-        var totalLength = idBuffer.Length + previousStepBuffer.Length + solutionLengthBuffer.Length + stateLength;
+        var totalLength = idBuffer.Length + previousStepBuffer.Length + stepsCount.Length + stateLength;
         var lengthBytes = BitConverter.GetBytes(totalLength);
         logger?.LogTrace("Total length: {Length} ({Bytes})", totalLength, PrintBytes(lengthBytes));
 
         logger?.LogDebug("Writing bytes to file...");
         await stream.WriteAsync(lengthBytes, token);
         await stream.WriteAsync(idBuffer, token);
-        await stream.WriteAsync(solutionLengthBuffer, token);
+        await stream.WriteAsync(stepsCount, token);
         await stream.WriteAsync(previousStepBuffer, token);
         await stream.WriteAsync(stateBuffer.AsMemory(0, stateLength), token);
         await stream.FlushAsync(token);
@@ -49,13 +48,6 @@ public class SolutionSerializer<TState, TStep>(IStateSerializer<TState, TStep> s
 
     public async Task<Solution<TState, TStep>> DeserializeSolutionAsync(Stream stream, CancellationToken token = default)
     {
-        void CheckStreamLength(int length)
-        {
-            if (stream.Position + length > stream.Length)
-            {
-                throw new IOException("Input stream too short.");
-            }
-        }
         logger?.LogDebug("Deserializing solution...");
         logger?.LogTrace("Stream length: {Length}", stream.Length);
         logger?.LogTrace("Stream at byte {Byte} ({Byte:X8})", stream.Position, stream.Position);
@@ -72,17 +64,17 @@ public class SolutionSerializer<TState, TStep>(IStateSerializer<TState, TStep> s
         var idBytes = new ArraySegment<byte>(solutionBuffer, 0, 16);
         var id = new Guid(idBytes);
         logger?.LogTrace("Read ID: {Guid:D} ({Bytes})", id, PrintBytes(idBytes));
-        var parentBytes = new ArraySegment<byte>(solutionBuffer, 16, 16);
+        var stepsCountBytes = new ArraySegment<byte>(solutionBuffer, 16, 4);
+        var stepsCount = BitConverter.ToUInt32(stepsCountBytes);
+        logger?.LogTrace("Read step count: {Length}", stepsCount);
+        var parentBytes = new ArraySegment<byte>(solutionBuffer, 20, 16);
         var parent = new Guid(parentBytes);
         logger?.LogTrace("Parent: {Guid:D} ({Bytes})", parent, PrintBytes(parentBytes));
-        var solutionLengthBytes = new ArraySegment<byte>(solutionBuffer, 32, 4);
-        var solutionLength = BitConverter.ToUInt32(solutionLengthBytes);
-        logger?.LogTrace("Read solution length: {Length}", solutionLength);
         var step = parent == Guid.Empty
             ? default
-            : stateSerializer.DeserializeStep(new ArraySegment<byte>(solutionBuffer, 32,
+            : stateSerializer.DeserializeStep(new ArraySegment<byte>(solutionBuffer, 36,
                 stateSerializer.SerializedStepLength));
-        var start = 32 + stateSerializer.SerializedStepLength;
+        var start = 36 + stateSerializer.SerializedStepLength;
         var stateLength = length - start;
         var state = stateSerializer.DeserializeState(new ArraySegment<byte>(solutionBuffer, start,
             stateLength));
@@ -90,9 +82,17 @@ public class SolutionSerializer<TState, TStep>(IStateSerializer<TState, TStep> s
         return new Solution<TState, TStep>(state)
         {
             Id = id,
-            Length = solutionLength,
+            Length = stepsCount,
             Previous = parent == Guid.Empty ? default : (parent, step!)
         };
+
+        void CheckStreamLength(int readLength)
+        {
+            if (stream.Position + readLength > stream.Length)
+            {
+                throw new IOException("Input stream too short.");
+            }
+        }
     }
 
     private static string PrintBytes(byte[] bytes) => string.Join("", bytes.Select(b => b.ToString("X2")));
