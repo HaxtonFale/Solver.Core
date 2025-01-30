@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		version.json = version.json
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Solver.Core.Test", "Solver.Core.Test\Solver.Core.Test.csproj", "{6DE3C92E-88BB-4CFE-86BE-9C0B3C424619}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{5A216A49-9B76-4F02-945F-2E0E2773A9AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A216A49-9B76-4F02-945F-2E0E2773A9AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A216A49-9B76-4F02-945F-2E0E2773A9AC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DE3C92E-88BB-4CFE-86BE-9C0B3C424619}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DE3C92E-88BB-4CFE-86BE-9C0B3C424619}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DE3C92E-88BB-4CFE-86BE-9C0B3C424619}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DE3C92E-88BB-4CFE-86BE-9C0B3C424619}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
